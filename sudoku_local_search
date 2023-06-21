@@ -1,0 +1,113 @@
+import random
+
+def print_sudoku(sudoku):
+    for i in range(9):
+        if i % 3 == 0 and i != 0:
+            print("- - - - - - - - - - - - -")
+
+        for j in range(9):
+            if j % 3 == 0 and j != 0:
+                print("| ", end="")
+
+            if j == 8:
+                print(sudoku[i][j])
+            else:
+                print(str(sudoku[i][j]) + " ", end="")
+
+
+def get_block_values(sudoku, block_row, block_col):
+    block_values = []
+    start_row = block_row * 3
+    start_col = block_col * 3
+
+    for i in range(start_row, start_row + 3):
+        for j in range(start_col, start_col + 3):
+            block_values.append(sudoku[i][j])
+
+    return block_values
+
+
+def generate_random_solution():
+    sudoku = [[0] * 9 for _ in range(9)]
+
+    for i in range(9):
+        for j in range(9):
+            if random.random() < 0.5:
+                block_row = i // 3
+                block_col = j // 3
+                block_values = get_block_values(sudoku, block_row, block_col)
+
+                valid_values = [num for num in range(1, 10) if num not in sudoku[i] and num not in [row[j] for row in sudoku] and num not in block_values]
+
+                if valid_values:
+                    sudoku[i][j] = random.choice(valid_values)
+
+    return sudoku
+
+
+def calculate_conflicts(sudoku, row, col):
+    conflicts = 0
+
+    for i in range(9):
+        if i != col and sudoku[row][i] == sudoku[row][col]:
+            conflicts += 1
+
+    for i in range(9):
+        if i != row and sudoku[i][col] == sudoku[row][col]:
+            conflicts += 1
+
+    block_row = row // 3
+    block_col = col // 3
+
+    for i in range(block_row * 3, block_row * 3 + 3):
+        for j in range(block_col * 3, block_col * 3 + 3):
+            if i != row and j != col and sudoku[i][j] == sudoku[row][col]:
+                conflicts += 1
+
+    return conflicts
+
+
+def find_best_move(sudoku):
+    best_move = None
+    min_conflicts = float('inf')
+
+    for row in range(9):
+        for col in range(9):
+            if sudoku[row][col] == 0:
+                conflicts = calculate_conflicts(sudoku, row, col)
+
+                if conflicts < min_conflicts:
+                    best_move = (row, col)
+                    min_conflicts = conflicts
+
+    return best_move
+
+
+def hill_climbing(sudoku):
+    while True:
+        current_conflicts = sum([calculate_conflicts(sudoku, row, col) for row in range(9) for col in range(9)])
+
+        if current_conflicts == 0:
+            return sudoku
+
+        row, col = find_best_move(sudoku)
+
+        block_row = row // 3
+        block_col = col // 3
+        block_values = get_block_values(sudoku, block_row, block_col)
+
+        valid_values = [num for num in range(1, 10) if num not in sudoku[row] and num not in [row[col] for row in sudoku] and num not in block_values]
+
+        if valid_values:
+            sudoku[row][col] = random.choice(valid_values)
+
+
+# Exemplo de uso
+initial_solution = generate_random_solution()
+print("Sudoku inicial:")
+print_sudoku(initial_solution)
+
+hill_climbing(initial_solution)
+
+print("\nSudoku resolvido:")
+print_sudoku(initial_solution)
